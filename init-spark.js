@@ -11,12 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('开始初始化API配置...');
     // 从.env文件中获取配置
     // 注意：在实际生产环境中，这些值应该从服务器端获取，而不是直接嵌入到前端代码中
-    const appId = import.meta.env.VITE_APP_SPARK_APPID;
-    const apiKey = import.meta.env.VITE_APP_SPARK_APIKEY;
-    const apiSecret = import.meta.env.VITE_APP_SPARK_APISECRET;
-    const uid = import.meta.env.VITE_APP_SPARK_UID;
-    const url = import.meta.env.VITE_APP_SPARK_URL;
-    const domain = import.meta.env.VITE_APP_DOMAIN;
+    const appId = '3993bebc';
+    const apiKey = 'b1ac6aed76cef76575745f348445afdc';
+    const apiSecret = 'MGJhNmNhNThlNzQyZmM5MTY5OTRlZjZl';
+    const uid = 'SMTLITE';
+    const url = 'wss://spark-api.xf-yun.com/v1.1/chat';
+    const domain = 'lite';
     
     try {
         // 初始化API
