@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="./logo.svg">
+  <title>AI助手LITE</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-icons@latest/dist/umd/lucide.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/html.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-dark.css">
+  <style>
+    /* 基础变量 */
+    :root {
+      --primary: #64748B;
+      --primary-light: #94A3B8;
+      --primary-dark: #475569;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-600: #4B5563;
+      --gray-700: #374151;
+      --gray-800: #1F2937;
+      --gray-900: #111827;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --gradient-light: linear-gradient(135deg, var(--gray-100) 0%, white 100%);
+      --gradient-dark: linear-gradient(135deg, var(--gray-200) 0%, var(--gray-100) 100%);
+    }
+
+    /* 基础样式 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%; /* 确保 html 和 body 都能撑满高度 */
+      overflow: hidden; /* 防止外层滚动 */
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: var(--gray-900);
+      background: var(--gradient-light);
+      display: flex; /* 使用 Flexbox */
+      flex-direction: column; /* 列方向 */
+    }
+
+    /* 顶部固定信息栏 */
+    .header-info {
+      background: var(--gray-500);
+      color: white;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-md);
+      flex-shrink: 0; /* 防止头部被压缩 */
+    }
+
+    .header-info span {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* 主容器 - 应用的主要区域 */
+    .app-container {
+      max-width: 768px;
+      margin: 0 auto;
+      flex: 1; /* 占据 body 中剩余的所有空间 */
+      width: 100%; /* 确保宽度 */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* 防止 app-container 滚动 */
+      position: relative; /* 用于可能的内部绝对定位 */
+    }
+
+    /* 聊天容器 */
+    .chat-container {
+      flex: 1; /* 占据 app-container 中剩余空间 */
+      padding: 1rem;
+      /* padding-bottom 由 Flexbox 自然处理 */
+      overflow-y: auto; /* 仅聊天容器滚动 */
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* 消息样式 */
+    .message {
+      display: flex;
+      gap: 1rem;
+      max-width: 85%;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: messageAppear 0.3s ease forwards;
+    }
+
+    @keyframes messageAppear {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .user-message {
+      margin-left: auto;
+      flex-direction: row-reverse;
+    }
+
+    .assistant-message {
+      margin-right: auto;
+    }
+
+    .message-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .user-avatar {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .assistant-avatar {
+      background-color: var(--primary-light);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .message-content {
+      padding: 1rem 1.25rem;
+      max-width: 100%;
+      position: relative;
+      overflow: hidden;
+      border-radius: 0.75rem;
+    }
+
+    .user-message .message-content {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+
+    .assistant-message .message-content {
+      background: var(--gray-200);
+      color: var(--gray-900);
+    }
+
+    /* 代码块样式 */
+    .message-content pre {
+      margin: 0.5rem 0;
+      padding: 1rem;
+      background-color: var(--gray-800);
+      border-radius: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .message-content code {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      color: var(--gray-100);
+    }
+
+    .katex {
+      font-size: 1.15em !important;
+      line-height: 1.6;
+      padding: 0.25em 0.1em;
+    }
+    .katex-display {
+      margin: 0.75em 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .katex-display > .katex {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .katex .base {
+      color: var(--gray-900);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .katex .base {
+        color: var(--gray-100);
+      }
+    }
+
+    /* 输入区域 */
+    .input-area {
+      padding: 1rem;
+      background: var(--gradient-light);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--gray-200);
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0; /* 防止输入区域被压缩 */
+      width: 100%; /* 确保 input-area 本身是全宽的 */
+    }
+
+    .input-container {
+      max-width: 768px; /* 限制内容最大宽度 */
+      margin: 0 auto; /* 使内容居中 */
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    #messageInput {
+      flex: 1;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 1.1rem;
+      resize: none;
+      min-height: 3rem;
+      max-height: 8rem;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+      background-color: var(--gray-50);
+    }
+
+    #messageInput:focus {
+      border-color: var(--primary);
+    }
+
+    /* 按钮基础样式 */
+    .icon-button {
+      padding: 1rem;
+      border: none;
+      border-radius: 1.1rem;
+      background-color: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-md);
+      transform: translateY(0) scale(1);
+      position: relative;
+      overflow: hidden;
+      z-index: 5;
+      min-width: 52px; /* 保证最小宽度 */
+      min-height: 52px; /* 保证最小高度 */
+    }
+    
+    .icon-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.1);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .icon-button:hover::before {
+      opacity: 1;
+    }
+    
+    .icon-button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      background-color: var(--primary-dark);
+    }
+    
+    .icon-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    /* 特别为知识库切换按钮调整背景色 */
+    #toggleKbButton {
+      background-color: var(--primary-light);
+    }
+    
+    #toggleKbButton:hover {
+       background-color: var(--primary); /* 悬停时颜色加深一点 */
+    }
+
+    .loading-icon {
+      animation: spin 1s linear infinite;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* 动画 */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 欢迎消息 */
+    .welcome-message {
+      width: auto;
+      max-width: 85%;
+      margin-right: auto;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      animation: messageAppear 0.3s ease forwards;
+    }
+
+    .welcome-message h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .welcome-message p {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-bottom: 0.25rem;
+    }
+
+    /* 系统消息 */
+    .system-message {
+      max-width: 85%;
+      margin: 0 auto;
+      background-color: var(--gray-100);
+      border-left: 3px solid var(--primary);
+      animation: messageAppear 0.3s ease forwards;
+    }
+    
+    .system-message.error-message {
+      border-left-color: #EF4444;
+    }
+    
+    .system-avatar {
+      background-color: var(--gray-400);
+      color: white;
+    }
+    
+    /* 思考中消息 */
+    .thinking-message {
+      opacity: 0.8;
+    }
+    
+    .thinking-message .message-content {
+      background-color: var(--gray-100);
+    }
+    
+    /* 代码块 */
+    .code-block {
+      position: relative;
+      margin: 1rem 0;
+    }
+    
+    .code-block pre {
+      margin: 0;
+      background-color: var(--gray-800);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    
+    .code-block code {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      color: var(--gray-100);
+      line-height: 1.5;
+    }
+    
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background-color: var(--gray-700);
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .copy-btn:hover {
+      opacity: 1;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 640px) {
+      /* 针对小屏幕优化 */
+
+      body {
+        /* 可以考虑为移动端设置稍小的基础字号 */
+        /* font-size: 95%; */
+      }
+
+      .header-info {
+        padding: 0.5rem 0.75rem; /* 减小头部内边距 */
+      }
+      .header-info span {
+        font-size: 0.75rem; /* 减小头部字号 */
+      }
+
+      .chat-container {
+        padding: 0.75rem; /* 确认聊天容器内边距 */
+        gap: 1rem; /* 减小消息间距 */
+      }
+
+      .message {
+        max-width: 90%; /* 调整消息最大宽度 */
+        gap: 0.5rem;  /* 减小头像和内容的间距 */
+      }
+
+      .message-avatar {
+        width: 2.25rem; /* 调整头像尺寸 */
+        height: 2.25rem;
+      }
+
+      .message-content {
+        padding: 0.6rem 0.9rem; /* 减小消息内边距 */
+        border-radius: 0.6rem; /* 减小消息圆角 */
+        font-size: 0.9rem; /* 调整消息字号 */
+      }
+
+      /* 代码块在移动端也需要调整 */
+      .message-content pre {
+        padding: 0.75rem;
+      }
+      .message-content code {
+        font-size: 0.8rem;
+      }
+
+      .input-area {
+        padding: 0.5rem 0.75rem; /* 减小输入区域内边距 */
+      }
+
+      .input-container {
+        gap: 0.5rem; /* 减小输入框和按钮间距 */
+      }
+
+      #messageInput {
+        padding: 0.8rem 1rem; /* 调整输入框内边距 */
+        font-size: 0.875rem;
+        border-radius: 0.8rem; /* 调整输入框圆角 */
+        line-height: 1.6;
+      }
+
+      #sendButton {
+        padding: 0.8rem; /* 调整按钮内边距 */
+        min-width: 44px;
+        border-radius: 0.8rem; /* 调整按钮圆角 */
+      }
+
+      .toast {
+        font-size: 0.875rem;
+        padding: 0.875rem 1.25rem;
+      }
+
+      /* 欢迎消息也需要调整 */
+      .welcome-message h2 {
+        font-size: 1.1rem;
+      }
+      .welcome-message p {
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --gray-50: #1a1a1a;
+        --gray-100: #262626;
+        --gray-200: #404040;
+        --gray-900: #f5f5f5;
+      }
+
+      body {
+        background-color: var(--gray-50);
+        color: var(--gray-900);
+      }
+
+      .assistant-message .message-content {
+        background-color: var(--gray-100);
+        border-color: var(--gray-200);
+      }
+
+      #messageInput {
+        background-color: var(--gray-100);
+        border-color: var(--gray-200);
+        color: var(--gray-900);
+      }
+    }
+
+    /* Toast 消息 */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background-color: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+      z-index: 100;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+      max-width: 90%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    @media (max-width: 640px) {
+      .toast {
+        font-size: 0.875rem;
+        padding: 0.875rem 1.25rem;
+      }
+    }
+
+    /* 重试连接按钮 */
+    .retry-connection {
+      width: 100%;
+      margin: 1rem auto;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid var(--gray-300);
+      border-radius: 0.5rem;
+      background-color: var(--gray-50);
+    }
+    
+    .retry-connection p {
+      margin-bottom: 0.5rem;
+      color: var(--gray-700);
+    }
+    
+    .retry-connection button {
+      padding: 0.5rem 1rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .retry-connection button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="light-theme">
+  <div class="header-info">
+    <span>基于SMT自研模型SMITTY</span>
+  </div>
+
+  <main class="app-container">
+    <div class="chat-container">
+      <div class="message assistant-message welcome-message">
+        <div class="message-avatar assistant-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+        </div>
+        <div class="message-content">
+          <h2>欢迎使用 LITE AI助手</h2>
+          <p>私人定制版773028D；LITE版</p>
+          <p>产品升级或问题反馈：smtoffice@yeah.net</p>
+        </div>
+      </div>
+      
+      <!-- 重试连接按钮 -->
+      <div id="retryConnection" class="retry-connection hidden">
+        <p>连接服务器失败</p>
+        <button onclick="retryAPIConnection()">重试连接</button>
+      </div>
+    </div>
+
+    <!-- 输入区域移到 app-container 外部，使其宽度不受限制 -->
+    <div class="input-area">
+      <div class="input-container">
+        <textarea id="messageInput" placeholder="输入您的问题..." rows="1" onkeypress="handleKeyPress(event)" oninput="checkInput()"></textarea>
+        <button id="sendButton" type="button" class="icon-button" onclick="sendUserMessage()" disabled>
+          <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m22 2-7 20-4-9-9-4Z"></path>
+            <path d="M22 2 11 13"></path>
+          </svg>
+          <svg id="loadingIcon" class="loading-icon hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 加载API相关脚本 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="spark-api.js"></script>
+  <script src="init-spark.js"></script>
+  
+  
+  <!-- KaTeX初始化 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '\\[', right: '\\]', display: true}
+        ],
+        throwOnError: false
+      });
+    });
+  </script>
+
+  <!-- 主应用脚本 -->
+  <script>
+    // 全局变量
+    let isWaitingForResponse = false;
+    let currentResponseElement = null;
+    let conversationHistory = []; // 存储对话历史，每轮包含用户和AI的消息
+    
+    // --- 工具函数：防抖 --- 
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+    // --- 防抖函数结束 ---
+    
+    // --- 尺寸推荐逻辑 (使用 Toast) ---
+    const OPTIMAL_WIDTH_MIN = 650;
+    const OPTIMAL_WIDTH_MAX = 750;
+    let isCurrentlyOptimalSize = true; // 新增：跟踪当前尺寸是否合适
+
+    function checkWindowSize() {
+      const width = window.innerWidth;
+      const isNowOptimal = (width >= OPTIMAL_WIDTH_MIN && width <= OPTIMAL_WIDTH_MAX);
+      
+      // 检查：如果当前尺寸不合适，并且之前是合适的，则显示提示
+      if (!isNowOptimal && isCurrentlyOptimalSize) {
+        // 根据是过大还是过小显示不同提示
+        if (width < OPTIMAL_WIDTH_MIN) {
+          showToast('当前窗口过小，建议调大以获得最佳体验');
+        } else if (width > OPTIMAL_WIDTH_MAX) {
+          showToast('当前窗口过大，建议调小以获得最佳体验');
+        }
+      }
+      
+      // 更新当前尺寸状态
+      isCurrentlyOptimalSize = isNowOptimal; 
+    }
+    // --- 尺寸推荐逻辑结束 ---
+    
+    // 动态内容渲染后重新处理公式
+    function renderNewMath() {
+      renderMathInElement(document.querySelector('.chat-container'), {
+        delimiters: [
+          {left: '$', right: '$', display: false},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '\\[', right: '\\]', display: true}
+        ],
+        macros: {
+          "\\RR": "\\mathbb{R}",
+          "\\dx": "\\mathrm{d}x"
+        }
+      });
+      // 修复公式对齐问题
+      Array.from(document.getElementsByClassName('katex-display')).forEach(el => {
+        el.style.transform = '';
+         el.parentElement.style.overflowX = 'auto';
+      });
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', async function() {
+      console.log('页面加载完成，开始初始化...');
+      
+      try {
+        
+        const messageInput = document.getElementById('messageInput');
+        
+        // 设置输入框自动调整高度，并在调整后更新 padding
+        messageInput.addEventListener('input', function() { 
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // 监听窗口大小变化 (使用防抖)
+        window.addEventListener('resize', debounce(() => {
+          checkWindowSize(); // 检查窗口尺寸
+          scrollToBottom(); // 滚动到底部
+        }, 250)); 
+        
+        // 初始检查窗口尺寸并设置初始状态
+        const initialWidth = window.innerWidth;
+        isCurrentlyOptimalSize = (initialWidth >= OPTIMAL_WIDTH_MIN && initialWidth <= OPTIMAL_WIDTH_MAX);
+        checkWindowSize(); // 首次加载时也检查一次，但不一定显示提示（除非初始就不合适）
+        
+        // --- 确保API初始化 ---
+        // 确保所有必要的脚本已加载
+        if (typeof CryptoJS === 'undefined') {
+          console.error('严重错误: CryptoJS 未加载，API无法正常工作');
+          createSystemMessage('加密库未加载，API无法初始化', 'error');
+          return; // 阻止后续执行
+        }
+        
+        // 检查是否已经定义了 sparkAPI 对象
+        console.log('检查 sparkAPI 对象: ', typeof window.sparkAPI);
+        
+        if (typeof window.sparkAPI === 'undefined') {
+          console.error('严重错误: sparkAPI 对象未定义');
+          console.log('尝试等待 500ms 后再次检查...');
+          
+          // 等待一小段时间，可能脚本还在加载中
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          if (typeof window.sparkAPI === 'undefined') {
+            console.error('错误: 延迟后 sparkAPI 对象仍未定义');
+            createSystemMessage('核心API未加载，请刷新页面', 'error');
+            return; // 阻止后续执行
+          } else {
+            console.log('延迟后 sparkAPI 对象已可用');
+          }
+        }
+        
+        // 最终调用 initSparkAPI 初始化连接
+        console.log('开始调用 initSparkAPI() 进行连接...');
+        await initSparkAPI();
+        console.log('API初始化流程完成');
+        
+      } catch(error) {
+        console.error('页面初始化过程中出错:', error);
+        console.error('错误堆栈:', error.stack);
+        createSystemMessage('页面初始化失败: ' + (error.message || '未知错误'), 'error');
+      }
+    });
+    
+    // 检查输入并启用/禁用发送按钮
+    function checkInput() {
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      sendButton.disabled = messageInput.value.trim().length === 0;
+    }
+    
+    // 处理回车键发送消息
+    function handleKeyPress(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendUserMessage();
+      }
+    }
+    
+    // 初始化API
+    async function initSparkAPI() {
+      try {
+        console.log('initSparkAPI 函数开始执行...');
+        
+        // 隐藏重试按钮
+        document.getElementById('retryConnection').classList.add('hidden');
+        
+        // 详细检查 window.sparkAPI 对象
+        if (typeof window.sparkAPI === 'undefined') {
+          console.error('严重错误: sparkAPI 对象未定义。可能原因：');
+          console.error('1. spark-api.js 文件未能加载');
+          console.error('2. spark-api.js 文件中有JavaScript错误');
+          console.error('3. spark-api.js 文件中未正确定义 window.sparkAPI');
+          
+          // 显示系统错误消息
+          createSystemMessage('无法初始化API，请刷新页面重试', 'error');
+          
+          // 可选：尝试动态加载 spark-api.js
+          /*
+          try {
+            console.log('尝试动态加载 spark-api.js...');
+            const script = document.createElement('script');
+            script.src = 'spark-api.js';
+            script.onload = function() {
+              console.log('动态加载 spark-api.js 成功，尝试重新初始化...');
+              setTimeout(() => initSparkAPI(), 500);
+            };
+            script.onerror = function() {
+              console.error('动态加载 spark-api.js 失败');
+            };
+            document.head.appendChild(script);
+          } catch (loadError) {
+            console.error('动态加载脚本失败:', loadError);
+          }
+          */
+          
+          return false;
+        }
+        
+        // 如果已经连接成功，直接返回
+        if (window.sparkAPI.ws && window.sparkAPI.ws.readyState === WebSocket.OPEN) {
+          console.log('已检测到活跃的WebSocket连接，跳过初始化');
+          return true;
+        }
+        
+        // 检查 sparkAPI 对象是否有必要的方法和属性
+        if (typeof window.sparkAPI.connect !== 'function') {
+          console.error('sparkAPI 对象不完整：缺少 connect 方法');
+          createSystemMessage('API接口不完整，请刷新页面', 'error');
+          return false;
+        }
+        
+        if (typeof window.sparkAPI.setResponseCallback !== 'function') {
+          console.error('sparkAPI 对象不完整：缺少 setResponseCallback 方法');
+          createSystemMessage('API接口不完整，请刷新页面', 'error');
+          return false;
+        }
+        
+        // *** 关键：设置响应回调函数 ***
+        console.log('设置API响应回调函数...');
+        window.sparkAPI.setResponseCallback(handleAPIResponse);
+        
+        // 尝试连接
+        console.log('尝试连接到API...');
+        const connected = await window.sparkAPI.connect(false); // 非静默模式，允许显示错误
+        
+        if (connected) {
+          console.log('成功连接到SparkAPI');
+          // 仅在首次连接成功时显示提示
+          if (!window.sparkAPI.hasConnected) {
+            showToast('已成功连接到服务器');
+            window.sparkAPI.hasConnected = true; // 标记已连接
+          }
+          return true;
+        } else {
+          console.error('连接SparkAPI失败');
+          createSystemMessage('连接服务器失败，请检查网络或刷新页面', 'error');
+          // 显示重试按钮
+          document.getElementById('retryConnection').classList.remove('hidden');
+          return false;
+        }
+      } catch (error) {
+        console.error('初始化SparkAPI时出错:', error);
+        console.error('错误堆栈:', error.stack);
+        createSystemMessage('连接服务器发生错误: ' + (error.message || '未知错误'), 'error');
+        // 显示重试按钮
+        document.getElementById('retryConnection').classList.remove('hidden');
+        return false;
+      }
+    }
+    
+    // 重试API连接
+    async function retryAPIConnection() {
+      const connected = await initSparkAPI();
+      if (connected) {
+        document.getElementById('retryConnection').classList.add('hidden');
+      }
+    }
+
+    
+    // 发送用户消息 - 包含自动添加知识库逻辑
+    let lastUserMessage = ''; // 用于在handleAPIResponse中访问用户消息
+    async function sendUserMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      lastUserMessage = message; // 保存当前用户消息
+      
+      if (!message) return;
+      
+      if (isWaitingForResponse) {
+        showToast('请等待上一条消息回复完成');
+        return;
+      }
+      
+      try {
+        // 创建用户消息
+        createUserMessage(message);
+        
+        // 清空输入框
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        document.getElementById('sendButton').disabled = true;
+        
+        // 检查是否是身份相关问题
+        if (isIdentityQuestion(message)) {
+          const identityResponse = generateIdentityResponse(message);
+          createAssistantMessage(identityResponse);
+          scrollToBottom();
+          // 将身份问题和回答添加到历史记录
+          conversationHistory.push({ role: 'user', content: message });
+          conversationHistory.push({ role: 'assistant', content: identityResponse });
+          trimConversationHistory(); // 保持历史记录在5轮以内
+          return;
+        }
+        
+        // 检查API连接状态
+        if (!window.sparkAPI || !window.sparkAPI.ws || window.sparkAPI.ws.readyState !== WebSocket.OPEN) {
+          // 显示思考中消息
+          createThinkingMessage();
+          
+          // 尝试初始化并连接
+          const connected = await initSparkAPI();
+          
+          // 如果连接失败，显示错误消息并返回
+          if (!connected) {
+            // 移除思考消息
+            document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+            isWaitingForResponse = false;
+            return;
+          }
+        }
+        
+        // 正常流程，请求API回答
+        isWaitingForResponse = true;
+        currentResponseElement = null;
+        
+        // 添加思考提示
+        createThinkingMessage();
+        
+        // 准备要发送给AI的消息
+        let messageToSend = '';
+
+        // 构建对话历史字符串
+        if (conversationHistory.length > 0) {
+          messageToSend += '对话历史：\n';
+          conversationHistory.forEach(entry => {
+            messageToSend += `${entry.role === 'user' ? '用户' : 'AI'}：${entry.content}\n`;
+          });
+        }
+        messageToSend += `此次用户问题：${message}`;
+
+        console.log('发送给AI的完整消息：', messageToSend);
+        
+        // 发送消息到API
+        await window.sparkAPI.sendMessage(messageToSend);
+        
+        scrollToBottom();
+      } catch (error) {
+        console.error('发送消息时出错:', error);
+        
+        // 移除思考消息
+        document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+        
+        showToast('发送消息失败：' + (error.message || '未知错误'));
+        isWaitingForResponse = false;
+      }
+    }
+    
+    // 创建用户消息元素
+    function createUserMessage(content) {
+      const chatContainer = document.querySelector('.chat-container');
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message user-message';
+      
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'message-avatar user-avatar';
+      avatarDiv.innerHTML = '<span>👤</span>';
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      contentDiv.textContent = content;
+      
+      messageElement.appendChild(avatarDiv);
+      messageElement.appendChild(contentDiv);
+      chatContainer.appendChild(messageElement);
+      
+      return messageElement;
+    }
+    
+    // 创建助手消息元素
+    function createAssistantMessage(content) {
+      const chatContainer = document.querySelector('.chat-container');
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message assistant-message';
+      
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'message-avatar assistant-avatar';
+      avatarDiv.innerHTML = '<span>🅰️</span>';
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      contentDiv.innerHTML = formatMessage(content);
+      
+      messageElement.appendChild(avatarDiv);
+      messageElement.appendChild(contentDiv);
+      chatContainer.appendChild(messageElement);
+      
+      return messageElement;
+    }
+    
+    // 创建系统消息元素
+    function createSystemMessage(content, type = 'info') {
+      const chatContainer = document.querySelector('.chat-container');
+      const messageElement = document.createElement('div');
+      
+      let className = 'message system-message';
+      let icon = '🔔';
+      
+      if (type === 'error') {
+        className += ' error-message';
+        icon = '⚠️';
+      }
+      
+      messageElement.className = className;
+      messageElement.innerHTML = `
+        <div class="message-avatar system-avatar">
+          <span>${icon}</span>
+        </div>
+        <div class="message-content">
+          ${content}
+        </div>
+      `;
+      
+      chatContainer.appendChild(messageElement);
+      return messageElement;
+    }
+    
+    // 创建思考消息
+    function createThinkingMessage() {
+      // 先移除任何已存在的思考消息，确保只有一个
+      document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+      
+      const chatContainer = document.querySelector('.chat-container');
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message assistant-message thinking-message';
+      
+      messageElement.innerHTML = `
+        <div class="message-avatar assistant-avatar">
+          <span>🤔</span>
+        </div>
+        <div class="message-content">
+          <p>Smitty正在思考中...</p>
+        </div>
+      `;
+      
+      chatContainer.appendChild(messageElement);
+      return messageElement;
+    }
+    
+    // 滚动到底部
+    function scrollToBottom() {
+      const chatContainer = document.querySelector('.chat-container');
+      const lastMessage = chatContainer.querySelector('.message:last-child'); 
+      
+      // 使用 setTimeout 将滚动推迟到下一个事件循环Tick
+      setTimeout(() => {
+        if (lastMessage) {
+          // 主要方法：将最后一个消息滚动到视图，立即执行 (非平滑)
+          lastMessage.scrollIntoView({ block: 'end', inline: 'nearest' }); 
+          console.log("Scrolled last message into view.");
+          
+          // 保险措施：短暂延时后再次强制设置 scrollTop
+          setTimeout(() => {
+            if (chatContainer.scrollTop + chatContainer.clientHeight < chatContainer.scrollHeight - 10) { // 检查是否真的到底了 (加10像素容差)
+              console.log("ScrollIntoView didn't reach the bottom, forcing scroll.");
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+          }, 50); // 50毫秒后检查并强制
+        } else {
+          // 如果没有消息，还是尝试滚动容器本身
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          console.log("Scrolled container to bottom (no messages found).");
+        }
+      }, 0); // 延迟 0 毫秒
+    }
+    
+    // 显示提示消息
+    function showToast(message) {
+      // 移除现有的toast
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) {
+        document.body.removeChild(existingToast);
+      }
+      
+      // 创建新的toast
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // 触发重绘以应用过渡效果
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+      
+      // 设置自动消失
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 2000);
+    }
+    
+    // 格式化消息内容
+    function formatMessage(text) {
+      // 预处理数学公式
+      text = text
+        .replace(/\$\$([\s\S]*?)\$\$/g, (m, eq) => `\\[${eq}\\]`)
+        .replace(/\$([^\$]+?)\$/g, (m, eq) => `\\(${eq}\\)`);
+
+      // 延迟渲染数学公式
+      setTimeout(() => {
+        if(window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+          });
+        }
+      }, 50);
+      if (!text) return '';
+      
+      // 转义HTML特殊字符
+      let formattedText = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // 处理代码块
+      formattedText = formattedText.replace(/```([\s\S]*?)```/g, function(match, code) {
+        const firstLine = code.trim().split('\n')[0];
+        let language = '';
+        let codeContent = code;
+        
+        if (firstLine && !firstLine.includes(' ') && firstLine.length < 20) {
+          language = firstLine;
+          codeContent = code.substring(firstLine.length).trim();
+        }
+        
+        const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+        
+        return `
+          <div class="code-block">
+            <pre><code id="${codeId}" class="language-${language}">${codeContent}</code></pre>
+            <button onclick="copyToClipboard('${codeId}')" class="copy-btn">复制</button>
+          </div>
+        `;
+      });
+      
+      // 处理行内代码
+      formattedText = formattedText.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // 处理粗体
+      formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      // 处理斜体
+      formattedText = formattedText.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      
+      // 处理换行
+      formattedText = formattedText.replace(/\n/g, '<br>');
+      
+      return formattedText;
+    }
+    
+    // 复制代码到剪贴板
+    function copyToClipboard(elementId) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      
+      const text = element.textContent;
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = 0;
+      
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand('copy');
+        showToast('已复制到剪贴板');
+      } catch (err) {
+        console.error('复制失败:', err);
+        showToast('复制失败');
+      }
+      
+      document.body.removeChild(textarea);
+    }
+    
+    // 高亮代码块
+    function highlightCode(block) {
+      if (!block) return;
+      
+      try {
+        // 如果使用了highlight.js，应用高亮
+        if (window.hljs) {
+          window.hljs.highlightBlock(block);
+        }
+      } catch (e) {
+        console.error('高亮代码出错:', e);
+      }
+    }
+    
+    // 检查是否是身份相关问题
+    function isIdentityQuestion(message) {
+      if (!message) return false;
+      
+      const lowerMessage = message.toLowerCase();
+      const patterns = [
+        '你是谁', '你叫什么', '自我介绍', '你的名字',
+        'who are you', 'your name', 'introduce yourself',
+        'smitty', 'smt', '身份', '介绍', 'identity'
+      ];
+      
+      return patterns.some(pattern => lowerMessage.includes(pattern));
+    }
+    
+    // 生成身份回答
+    function generateIdentityResponse(message) {
+      return '您好，我是Smitty，我能够帮你解答问题、提供信息和进行对话。';
+    }
+    
+    // 替换限制词汇
+    function replaceRestrictedTerms(text) {
+      if (!text) return '';
+      
+      // 替换限制词汇
+      const replacements = [
+        { from: /科大讯飞/g, to: 'SMT-AI' },
+        { from: /讯飞星火/g, to: 'SMT-AI' },
+        { from: /星火大模型/g, to: 'SMT-AI' },
+        { from: /claude/gi, to: 'Smitty' },
+        { from: /chatgpt/gi, to: 'SMT-AI' },
+        { from: /gpt-4/gi, to: 'SMT-AI' },
+        { from: /gpt-3/gi, to: 'SMT-AI' },
+        { from: /gpt/gi, to: 'SMT-AI' },
+        { from: /openai/gi, to: 'SMT-AI' }
+      ];
+      
+      let processedText = text;
+      for (const { from, to } of replacements) {
+        processedText = processedText.replace(from, to);
+      }
+      
+      return processedText;
+    }
+    
+    // 为全局使用暴露复制函数
+    window.copyToClipboard = copyToClipboard;
+
+    // 保持对话历史在5轮以内
+    function trimConversationHistory() {
+      const maxTurns = 5; // 最多保留5轮对话 (用户+AI共10条消息)
+      if (conversationHistory.length > maxTurns * 2) {
+        conversationHistory = conversationHistory.slice(conversationHistory.length - maxTurns * 2);
+      }
+    }
+
+    // 处理API响应
+    function handleAPIResponse(response, type, isComplete) {
+      console.log('收到响应:', { response, type, isComplete });
+      
+      // 移除所有思考消息 - 仅在收到第一块响应时移除
+      if (currentResponseElement === null && response) {
+        document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+      }
+      
+      // 空响应处理
+      if (!response && isComplete) {
+        console.warn('收到空响应或响应结束信号');
+        if (isWaitingForResponse) {
+          // 如果思考消息还在，移除它
+          document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+          // 如果没有创建过助手消息，显示一个提示
+          if (!currentResponseElement) {
+            showToast('AI未返回有效内容');
+          }
+          isWaitingForResponse = false;
+          currentResponseElement = null;
+        }
+        return;
+      }
+      
+      // 错误响应
+      if (type === 'error') {
+        console.error('API错误:', response);
+        // 移除思考消息
+        document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+        showToast('服务器错误: ' + response);
+        isWaitingForResponse = false;
+        currentResponseElement = null;
+      } 
+      // 助手响应
+      else if (type === 'assistant') {
+        try {
+          // 处理响应
+          let processedResponse = replaceRestrictedTerms(response);
+          // 移除AI：前缀
+          if (processedResponse.startsWith('AI：')) {
+            processedResponse = processedResponse.substring(3);
+          }
+          // 预处理数学公式
+          processedResponse = processedResponse.replace(/(\$\$)([\s\S]+?)(\$\$)/g, (m,p1,c,p2) => `\\[${c}\\]`)
+            .replace(/(\$)([^\$]+?)(\$)/g, (m,p1,c,p2) => `\\(${c}\\)`);
+          
+          if (!currentResponseElement) {
+            // 第一次收到响应，创建新的消息元素
+            currentResponseElement = createAssistantMessage(processedResponse);
+            currentResponseElement.dataset.complete = isComplete ? 'true' : 'false';
+          } else {
+            // 更新现有消息元素的内容
+            const contentDiv = currentResponseElement.querySelector('.message-content');
+            if (contentDiv) {
+              // 累加内容并格式化
+              let existingHTML = contentDiv.innerHTML.replace(/<br>$/, ''); // 移除可能存在的尾部<br>
+              contentDiv.innerHTML = formatMessage(processedResponse); // 假设API返回完整内容，如果不是则需要累加
+            }
+            currentResponseElement.dataset.complete = isComplete ? 'true' : 'false';
+          }
+          
+          // 响应完成
+          if (isComplete) {
+            isWaitingForResponse = false;
+          
+          // 处理代码块高亮
+          if (currentResponseElement) {
+            currentResponseElement.querySelectorAll('pre code').forEach(block => {
+              highlightCode(block);
+            });
+          }
+
+          // 将当前的用户消息和AI的完整回复添加到对话历史
+          conversationHistory.push({ role: 'user', content: lastUserMessage });
+          conversationHistory.push({ role: 'assistant', content: response });
+          trimConversationHistory(); // 保持历史记录在5轮以内
+
+          currentResponseElement = null; // 重置，下次创建新消息
+        }
+        } catch (error) {
+          console.error('处理响应时出错:', error);
+          // 移除思考消息
+          document.querySelectorAll('.thinking-message').forEach(el => el.remove());
+          showToast('处理响应时出错');
+          isWaitingForResponse = false;
+          currentResponseElement = null;
+        }
+      }
+      
+      scrollToBottom(); // 每次处理完响应块后尝试滚动
+    }
+  </script>
+  <!-- auto-refresh.js 此条代码不可删除！ -->
+  <script src="auto-refresh.js"></script>
+</body>
+</html>
